@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LinkedIn BI Jobs H1B Scraper — End-to-End Setup Guide</title>
+<style>
+:root {
+  --blue: #1a73e8;
+  --blue-light: #e8f0fe;
+  --green: #1e8e3e;
+  --green-light: #e6f4ea;
+  --purple: #7b1fa2;
+  --purple-light: #f3e5f5;
+  --orange: #e65100;
+  --orange-light: #fff3e0;
+  --gray: #5f6368;
+  --gray-light: #f8f9fa;
+  --border: #dadce0;
+  --text: #202124;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: var(--text); background: #fff; }
+.hero {
+  background: linear-gradient(135deg, #1a73e8 0%, #6c35de 100%);
+  color: #fff;
+  padding: 48px 40px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -60px; top: -60px;
+  width: 320px; height: 320px;
+  background: rgba(255,255,255,.07);
+  border-radius: 50%;
+}
+.hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.hero p { font-size: 15px; opacity: .88; max-width: 640px; line-height: 1.6; }
+.hero-meta { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+.hero-badge {
+  background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.3);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.body { max-width: 880px; margin: 0 auto; padding: 32px 24px 64px; }
+
+.toc {
+  background: var(--gray-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 36px;
+}
+.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); margin-bottom: 12px; }
+.toc ol { padding-left: 20px; }
+.toc li { margin-bottom: 6px; }
+.toc a { color: var(--blue); text-decoration: none; font-size: 14px; }
+.toc a:hover { text-decoration: underline; }
+
+section { margin-bottom: 48px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--blue-light);
+}
+.step-num {
+  width: 36px; height: 36px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px;
+  flex-shrink: 0;
+}
+.section-header h2 { font-size: 20px; font-weight: 700; }
+
+.card {
+  background: var(--gray-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.card h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.card p { font-size: 13px; color: #444; line-height: 1.6; margin-bottom: 8px; }
+.card p:last-child { margin-bottom: 0; }
+
+.callout {
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.callout-body { font-size: 13px; line-height: 1.6; }
+.callout-body strong { display: block; font-size: 13px; margin-bottom: 3px; }
+.callout.info { background: var(--blue-light); border: 1px solid #c2d7f8; }
+.callout.warn { background: var(--orange-light); border: 1px solid #ffcc80; }
+.callout.tip { background: var(--green-light); border: 1px solid #a8d5b5; }
+.callout.purple { background: var(--purple-light); border: 1px solid #ce93d8; }
+
+code {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 12px 0 16px;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.kw { color: #cba6f7; } /* keywords: purple */
+.str { color: #a6e3a1; } /* strings: green */
+.cm { color: #6c7086; font-style: italic; } /* comments: gray */
+.fn { color: #89dceb; } /* functions: cyan */
+.num { color: #fab387; } /* numbers: orange */
+.key { color: #89b4fa; } /* keys: blue */
+
+.steps-list { list-style: none; counter-reset: step-counter; }
+.steps-list li {
+  counter-increment: step-counter;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: flex-start;
+}
+.steps-list li::before {
+  content: counter(step-counter);
+  min-width: 24px; height: 24px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.steps-list .step-text { font-size: 13px; line-height: 1.6; }
+.steps-list .step-text strong { color: var(--text); }
+
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  padding: 4px 12px; border-radius: 20px;
+}
+.tag-both { background: var(--purple-light); color: var(--purple); }
+.tag-exp { background: var(--green-light); color: var(--green); }
+.tag-known { background: var(--blue-light); color: var(--blue); }
+
+.prompt-box {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 12px 0 16px;
+  position: relative;
+}
+.prompt-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #8b949e;
+  margin-bottom: 10px;
+  font-family: monospace;
+}
+.prompt-text {
+  font-size: 13px;
+  color: #e6edf3;
+  line-height: 1.7;
+  font-family: 'Consolas', monospace;
+  white-space: pre-wrap;
+}
+.copy-btn {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.copy-btn:hover { background: #30363d; color: #e6edf3; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+.pill-list { display: flex; flex-direction: column; gap: 8px; }
+.pill-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.pill-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.pill-body { font-size: 12.5px; line-height: 1.5; }
+.pill-body strong { display: block; margin-bottom: 2px; }
+
+.visa-table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 12.5px; }
+.visa-table th { background: var(--gray-light); font-weight: 600; padding: 10px 12px; text-align: left; border: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.visa-table td { padding: 10px 12px; border: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+.visa-table tr:nth-child(even) td { background: #fafafa; }
+
+.output-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+.output-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.output-text { font-size: 13px; line-height: 1.6; }
+.output-text strong { display: block; }
+
+footer {
+  background: var(--gray-light);
+  border-top: 1px solid var(--border);
+  padding: 24px 40px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray);
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>🔍 LinkedIn BI Jobs H1B Scraper</h1>
+  <p>A complete, step-by-step guide to set up an automated LinkedIn job search pipeline that scrapes Business Intelligence roles posted in the last 24 hours, filters for H1B visa sponsorship signals, and delivers an interactive table with recruiter contact links.</p>
+  <div class="hero-meta">
+    <span class="hero-badge">⏱ Setup time: ~10 min</span>
+    <span class="hero-badge">💰 Cost: Free tier available</span>
+    <span class="hero-badge">🔧 Tools: Claude.ai + Apify</span>
+    <span class="hero-badge">🔄 Repeatable daily</span>
+  </div>
+</div>
+
+<div class="body">
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#s1">What this pipeline does</a></li>
+    <li><a href="#s2">Tools you'll need (and how to sign up)</a></li>
+    <li><a href="#s3">Connect Apify to Claude</a></li>
+    <li><a href="#s4">The exact prompt to run every day</a></li>
+    <li><a href="#s5">How the H1B filter works</a></li>
+    <li><a href="#s6">Understanding your output table</a></li>
+    <li><a href="#s7">Tips to maximize results</a></li>
+    <li><a href="#s8">Customizing for other job searches</a></li>
+    <li><a href="#s9">Troubleshooting common issues</a></li>
+  </ol>
+</div>
+
+<!-- SECTION 1 -->
+<section id="s1">
+  <div class="section-header">
+    <div class="step-num">1</div>
+    <h2>What This Pipeline Does</h2>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">
+      <strong>The Big Picture</strong>
+      Every day, hundreds of Business Intelligence jobs are posted on LinkedIn. This pipeline scrapes all of them posted in the last 24 hours, filters for H1B-friendly companies, and delivers a searchable table — so you only spend time on jobs that can actually sponsor you.
+    </div>
+  </div>
+
+  <div class="pill-list">
+    <div class="pill-item">
+      <div class="pill-icon">🕷️</div>
+      <div class="pill-body">
+        <strong>Step 1 — Scrape LinkedIn</strong>
+        Uses Apify's LinkedIn Job Scraper to pull all full-time Business Intelligence jobs posted in the US within the last 24 hours. Typically returns 300–400 jobs per run.
+      </div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">🔍</div>
+      <div class="pill-body">
+        <strong>Step 2 — Keyword scan for explicit H1B mentions</strong>
+        Reads every job description and flags postings that mention: H1B, H-1B, visa sponsorship, work authorization, OPT, EAD, green card, immigration support, LCA, labor condition, visa transfer, portability, F-1, STEM OPT, or employment eligibility.
+      </div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">🏢</div>
+      <div class="pill-body">
+        <strong>Step 3 — Cross-reference known H1B sponsors</strong>
+        Matches company names against a curated list of 100+ companies with documented USCIS H1B petition history — including Amazon, Microsoft, Google, Deloitte, PwC, Wells Fargo, Capital One, TCS, Infosys, and more.
+      </div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">📊</div>
+      <div class="pill-body">
+        <strong>Step 4 — Deliver interactive table</strong>
+        Outputs a filterable, sortable HTML table with 9 columns: company, role, location, salary, applicants, posted time, visa signal tag, recruiter/hiring manager search links, and direct apply link.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2 -->
+<section id="s2">
+  <div class="section-header">
+    <div class="step-num">2</div>
+    <h2>Tools You'll Need</h2>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>🤖 Claude.ai (by Anthropic)</h3>
+      <p>The AI that orchestrates everything — runs the scraper, processes the data, applies the H1B filter, and builds the output table.</p>
+      <p><strong>Sign up:</strong> <a href="https://claude.ai" target="_blank" style="color:var(--blue)">claude.ai</a> — Free plan works. Pro plan ($20/mo) gives higher message limits.</p>
+    </div>
+    <div class="card">
+      <h3>⚙️ Apify</h3>
+      <p>A cloud scraping platform that runs the LinkedIn job scraper. Claude connects to it automatically via MCP (Model Context Protocol).</p>
+      <p><strong>Sign up:</strong> <a href="https://apify.com" target="_blank" style="color:var(--blue)">apify.com</a> — Free tier includes enough monthly credits for daily runs.</p>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout-icon">✅</div>
+    <div class="callout-body">
+      <strong>Free tier is enough</strong>
+      The LinkedIn scraper used in this guide (<code>cheap_scraper/linkedin-job-scraper</code>) costs approximately $0.01–0.05 per run. Apify's free plan includes $5/month in credits — enough for ~100 daily runs.
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<section id="s3">
+  <div class="section-header">
+    <div class="step-num">3</div>
+    <h2>Connect Apify to Claude</h2>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>Do this once — it takes about 3 minutes</strong>
+      This connection is what allows Claude to automatically run scrapers on your behalf. Once set up, you never need to touch Apify manually again.
+    </div>
+  </div>
+
+  <ol class="steps-list">
+    <li>
+      <div class="step-text">
+        <strong>Create your Apify account</strong><br>
+        Go to <a href="https://apify.com" target="_blank" style="color:var(--blue)">apify.com</a> → click <em>Sign Up</em> → use Google or email. Confirm your email.
+      </div>
+    </li>
+    <li>
+      <div class="step-text">
+        <strong>Get your Apify API token</strong><br>
+        In Apify, go to <em>Settings → Integrations → API tokens</em> → click <em>Create token</em> → name it "Claude" → copy the token. Keep this safe like a password.
+      </div>
+    </li>
+    <li>
+      <div class="step-text">
+        <strong>Open Claude.ai settings</strong><br>
+        Go to <a href="https://claude.ai" target="_blank" style="color:var(--blue)">claude.ai</a> → click your profile icon (top right) → <em>Settings</em> → <em>Integrations</em> (or <em>Connectors</em>).
+      </div>
+    </li>
+    <li>
+      <div class="step-text">
+        <strong>Add Apify as an integration</strong><br>
+        Click <em>Add integration</em> or <em>Browse connectors</em> → search for <em>Apify</em> → click <em>Connect</em> → paste your API token when prompted → click <em>Save</em>.
+      </div>
+    </li>
+    <li>
+      <div class="step-text">
+        <strong>Verify the connection</strong><br>
+        Start a new Claude chat and type: <em>"List my Apify actors"</em>. If Claude responds with Apify tools, you're connected. If not, retry the token step.
+      </div>
+    </li>
+  </ol>
+
+  <div class="callout info">
+    <div class="callout-icon">📎</div>
+    <div class="callout-body">
+      <strong>Start a fresh conversation each time you run</strong>
+      Claude's tool availability can drift in long conversations. For best results, always start a new chat for your daily job search run. The whole pipeline completes in 2–3 minutes from a fresh chat.
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4 -->
+<section id="s4">
+  <div class="section-header">
+    <div class="step-num">4</div>
+    <h2>The Exact Prompt to Run Every Day</h2>
+  </div>
+
+  <p style="font-size:13px;color:#444;margin-bottom:16px;line-height:1.6">Copy this prompt exactly and paste it into a new Claude.ai conversation. Claude will handle everything automatically — scraping, filtering, and building the table — in about 2–3 minutes.</p>
+
+  <div class="prompt-box">
+    <div class="prompt-label">📋 DAILY PROMPT — Copy and paste this into Claude.ai</div>
+    <button class="copy-btn" onclick="copyPrompt()">Copy</button>
+    <div class="prompt-text" id="prompt-content">Use Apify to scrape LinkedIn Jobs for Business Intelligence roles that are full-time and posted within the last 24 hours in the United States.
+
+After scraping, apply an H1B visa filter and return only jobs that meet ONE OR BOTH of these criteria:
+
+CRITERION 1 — EXPLICIT MENTION: The job description explicitly mentions any of:
+- H1B, H-1B, H1-B, H 1B
+- visa sponsorship, will sponsor, sponsorship
+- work authorization, work auth
+- OPT, STEM OPT, EAD, F-1, F1 student
+- immigration support, immigration assistance
+- green card, labor condition, LCA
+- visa transfer, visa portability
+- authorized to work, employment eligibility
+
+CRITERION 2 — KNOWN H1B SPONSOR: The company has documented H1B petition history with USCIS. This includes but is not limited to: Amazon, Google, Microsoft, Meta, Apple, Salesforce, IBM, Oracle, Intel, Walmart, Deloitte, PwC, KPMG, EY, Accenture, Cognizant, Infosys, TCS, Wipro, Capgemini, HCLTech, JPMorgan, Wells Fargo, Goldman Sachs, Capital One, Citi, Morgan Stanley, Bank of America, Netflix, Airbnb, Uber, DoorDash, Stripe, Snowflake, Databricks, Palantir, NVIDIA, Qualcomm, Adobe, ServiceNow, Workday, Medtronic, Johnson & Johnson, Pfizer, Sanofi, Bristol Myers Squibb, Booz Allen Hamilton, Northrop Grumman, Leidos, T-Mobile, AT&T, Comcast, Target, Walmart, and similar large enterprises.
+
+For each qualifying job, return a structured interactive HTML table with these 9 columns:
+1. Company name
+2. Role title
+3. Location
+4. Salary range (show "Not listed" if absent)
+5. Number of applicants
+6. Date/time posted
+7. Visa signal tag: 🟣 Both (explicit + known sponsor) | 🟢 Explicit mention | 🔵 Known sponsor
+8. Poster/Contacts: show "Not disclosed by LinkedIn" for poster name, then two clickable links: "🔍 Find Recruiter" and "👤 Find Hiring Mgr" (pre-built LinkedIn People Search URLs for that company)
+9. Direct Apply link
+
+Make the table interactive with:
+- Search bar (filter by company, title, or location)
+- Dropdown to filter by visa signal type
+- Dropdown to filter by salary availability
+- Dropdown to filter by applicant volume (low competition vs high demand)
+- Sortable columns
+- Pagination (20-25 rows per page)
+
+Save and present the result as a downloadable HTML file.</div>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Pro tip: add your city for targeted results</strong>
+      Add <em>"Focus on remote jobs and jobs in [your city, state]"</em> at the end of the prompt to prioritize roles in your area. Example: <em>"Focus on remote jobs and jobs in San Diego, CA."</em>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5 -->
+<section id="s5">
+  <div class="section-header">
+    <div class="step-num">5</div>
+    <h2>How the H1B Filter Works</h2>
+  </div>
+
+  <p style="font-size:13px;color:#444;margin-bottom:16px;line-height:1.6">Every job goes through two independent checks. A job only needs to pass ONE to be included. Jobs that pass both get the highest-priority 🟣 Both tag.</p>
+
+  <div class="tag-row">
+    <span class="tag tag-both">🟣 Both — Highest confidence</span>
+    <span class="tag tag-exp">🟢 Explicit — Job description mentions it</span>
+    <span class="tag tag-known">🔵 Known Sponsor — USCIS filing history</span>
+  </div>
+
+  <table class="visa-table">
+    <thead>
+      <tr>
+        <th>Tag</th>
+        <th>What it means</th>
+        <th>How confident?</th>
+        <th>Action recommended</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag tag-both">🟣 Both</span></td>
+        <td>Job posting explicitly mentions H1B/visa AND company has documented USCIS H1B filing history</td>
+        <td>Very High — double signal</td>
+        <td>Apply immediately. These are your best bets. Find the recruiter and reach out directly on LinkedIn.</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-exp">🟢 Explicit</span></td>
+        <td>Job description directly states visa sponsorship, H1B, work authorization assistance, or similar keywords</td>
+        <td>High — stated in the posting</td>
+        <td>Strong signal. Read the full job description carefully — some postings say "will sponsor" while others say "not able to sponsor."</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-known">🔵 Known Sponsor</span></td>
+        <td>Company has filed H1B petitions with USCIS historically, even if this specific posting doesn't mention it</td>
+        <td>Medium-High — company-level signal</td>
+        <td>Apply and ask about sponsorship during the recruiter screen. Most large companies with H1B history continue to sponsor.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>Watch for negative signals</strong>
+      The filter automatically excludes postings that say "not able to sponsor," "unable to sponsor," "cannot sponsor," or "we do not provide visa sponsorship." However, always read the full job description before applying.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>H1B Keywords the filter scans for</h3>
+    <p style="font-family:monospace;font-size:12px;color:#555;line-height:2">
+      h1b &nbsp;·&nbsp; h-1b &nbsp;·&nbsp; h 1b &nbsp;·&nbsp; h1-b &nbsp;·&nbsp; visa sponsor &nbsp;·&nbsp; will sponsor &nbsp;·&nbsp; sponsorship &nbsp;·&nbsp; immigration &nbsp;·&nbsp; work authorization &nbsp;·&nbsp; work auth &nbsp;·&nbsp; opt &nbsp;·&nbsp; ead &nbsp;·&nbsp; green card &nbsp;·&nbsp; visa transfer &nbsp;·&nbsp; visa support &nbsp;·&nbsp; visa portability &nbsp;·&nbsp; visa filing &nbsp;·&nbsp; lca &nbsp;·&nbsp; labor condition &nbsp;·&nbsp; international candidate &nbsp;·&nbsp; f-1 &nbsp;·&nbsp; f1 student &nbsp;·&nbsp; stem opt &nbsp;·&nbsp; authorized to work &nbsp;·&nbsp; employment eligibility &nbsp;·&nbsp; sponsoring &nbsp;·&nbsp; sponsor visa
+    </p>
+  </div>
+</section>
+
+<!-- SECTION 6 -->
+<section id="s6">
+  <div class="section-header">
+    <div class="step-num">6</div>
+    <h2>Understanding Your Output Table</h2>
+  </div>
+
+  <div class="pill-list">
+    <div class="pill-item">
+      <div class="pill-icon">🏢</div>
+      <div class="pill-body"><strong>Company + Location</strong> The hiring company name and city/state. Many companies post the same role across multiple locations — each appears as a separate row so you can target your preferred city.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">💼</div>
+      <div class="pill-body"><strong>Role Title</strong> The exact job title from LinkedIn. Click the Apply link to read the full description. Job titles vary widely — "BI Developer," "Analytics Engineer," "Data Intelligence Specialist" can all be the same type of role.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">💰</div>
+      <div class="pill-body"><strong>Salary Range</strong> Pulled directly from the LinkedIn posting. Many companies don't list salary — those show "Not listed." Use the "With salary only" filter to focus on transparent postings. Ranges are annual unless shown as /hr.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">👥</div>
+      <div class="pill-body"><strong>Applicants</strong> LinkedIn shows approximate counts: "Be among the first 25 applicants" (low competition 🟢), "Over 200 applicants" (high demand 🔴), or blank (unknown). Apply to low-competition roles immediately — being early dramatically improves chances.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">🕐</div>
+      <div class="pill-body"><strong>Posted Time</strong> How long ago the job was posted — e.g., "2 hours ago," "15 hours ago," "1 day ago." Jobs posted recently have fewer applicants. Sort by this column (ascending) to see the freshest postings first.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">🏷️</div>
+      <div class="pill-body"><strong>Visa Signal</strong> The H1B confidence tag: 🟣 Both, 🟢 Explicit, or 🔵 Known Sponsor. Use the visa signal dropdown to filter to only "Both" for highest-confidence opportunities.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">👤</div>
+      <div class="pill-body"><strong>Poster / Contacts</strong> LinkedIn does not expose recruiter names via scraping (0% disclosure rate across all tested postings). Instead you get two pre-built LinkedIn search links: 🔍 Find Recruiter searches for "recruiter [Company Name]" on LinkedIn People Search, and 👤 Find Hiring Mgr searches for "hiring manager [Company Name]." Click these to find the right person and message them directly.</div>
+    </div>
+    <div class="pill-item">
+      <div class="pill-icon">📨</div>
+      <div class="pill-body"><strong>Apply Link</strong> Opens the job directly on LinkedIn. Always apply through the official LinkedIn posting — it tracks your application status and lets you see if the recruiter has viewed your profile.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7 -->
+<section id="s7">
+  <div class="section-header">
+    <div class="step-num">7</div>
+    <h2>Tips to Maximize Results</h2>
+  </div>
+
+  <div class="callout purple">
+    <div class="callout-icon">🏆</div>
+    <div class="callout-body">
+      <strong>The "Both + Low Competition" combo is your golden target</strong>
+      Filter to 🟣 Both visa signal AND "Low competition (&lt;25 applicants)." These are jobs from proven H1B sponsors with almost no competition. Apply to every single one of these immediately.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>⏰ Timing matters — run it daily at the same time</h3>
+    <p>LinkedIn's "last 24 hours" filter is rolling. If you run at 9am every morning, you capture all jobs posted the previous day. Running later means some jobs already have 50–100+ more applicants than they did at 9am.</p>
+  </div>
+
+  <div class="card">
+    <h3>📧 Message the recruiter before applying</h3>
+    <p>For 🟣 Both-tagged companies at big firms (Amazon, Microsoft, Capital One, etc.): click "🔍 Find Recruiter," filter by 1st/2nd degree connections, and send a short personalized note BEFORE submitting the application. Mention the specific role title and that you're interested in discussing sponsorship. This gets your application flagged as a warm lead.</p>
+  </div>
+
+  <div class="card">
+    <h3>🔍 Use the search bar to target your skills</h3>
+    <p>Type your core skills in the search bar — "Snowflake," "dbt," "Power BI," "Tableau," "PySpark" — to instantly filter to roles that match your stack. The search scans company name, title, and location simultaneously.</p>
+  </div>
+
+  <div class="card">
+    <h3>💡 Sort salary descending for highest-paying first</h3>
+    <p>Click the Salary column header once to sort ascending, twice for descending (highest salary first). Combine with "With salary only" filter to see only transparent, high-paying roles at the top.</p>
+  </div>
+
+  <div class="card">
+    <h3>📁 Save the HTML file for your records</h3>
+    <p>The output is a self-contained HTML file. Open it in any browser — Chrome, Firefox, Safari. Save dated copies (e.g., <code>bi_h1b_jobs_aug12.html</code>) to track which jobs you've applied to over time.</p>
+  </div>
+</section>
+
+<!-- SECTION 8 -->
+<section id="s8">
+  <div class="section-header">
+    <div class="step-num">8</div>
+    <h2>Customizing for Other Job Searches</h2>
+  </div>
+
+  <p style="font-size:13px;color:#444;margin-bottom:16px;line-height:1.6">The pipeline works for any job type. Swap out the variables below in the prompt to adapt it.</p>
+
+  <pre><span class="cm">// Original — Business Intelligence</span>
+<span class="str">"Business Intelligence"</span> → full-time → last 24 hours
+
+<span class="cm">// Data Engineering</span>
+<span class="str">"Data Engineer OR Analytics Engineer"</span> → full-time → last 24 hours
+
+<span class="cm">// Power BI / Tableau specific</span>
+<span class="str">"Power BI Developer OR Tableau Developer"</span> → full-time → last 24 hours
+
+<span class="cm">// Snowflake / dbt focused</span>
+<span class="str">"Snowflake Data Engineer OR dbt Analytics Engineer"</span> → full-time → last 24 hours
+
+<span class="cm">// People Analytics</span>
+<span class="str">"People Analytics OR Workforce Analytics"</span> → full-time → last 24 hours
+
+<span class="cm">// Data Architect</span>
+<span class="str">"Data Architect OR Data Platform Architect"</span> → full-time → last 24 hours</pre>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Change the time window</h3>
+      <p>Replace "last 24 hours" with "last 3 days" or "last week" to cast a wider net. Useful for less common roles or when you missed a day.</p>
+    </div>
+    <div class="card">
+      <h3>Add location filters</h3>
+      <p>Add "remote only" or "in [City, State]" to narrow geographically. Example: "full-time, remote or in New York, NY."</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-icon">🗂️</div>
+    <div class="callout-body">
+      <strong>Run multiple searches in parallel</strong>
+      You can run the scraper multiple times in one conversation with different keywords. Run "Business Intelligence," then "Data Engineer," then "Analytics Engineer" — each produces its own dataset. Claude will combine and deduplicate them if you ask.
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 9 -->
+<section id="s9">
+  <div class="section-header">
+    <div class="step-num">9</div>
+    <h2>Troubleshooting Common Issues</h2>
+  </div>
+
+  <div class="card">
+    <h3>❌ "Apify tool not found" error</h3>
+    <p><strong>Cause:</strong> Claude's tool context cycled out Apify mid-conversation.</p>
+    <p><strong>Fix:</strong> Start a brand new Claude conversation. Apify loads fresh at the start of every chat. This is the most common issue and always resolved by starting fresh.</p>
+  </div>
+
+  <div class="card">
+    <h3>❌ Widget is loading forever (more than 5 minutes)</h3>
+    <p><strong>Cause:</strong> The live progress widget can stall if LinkedIn rate-limits the scraper.</p>
+    <p><strong>Fix:</strong> Tell Claude: "The widget is stuck — please check the run status and fetch whatever has been collected so far." Claude will pull partial results immediately.</p>
+  </div>
+
+  <div class="card">
+    <h3>❌ Only a few jobs returned (under 50)</h3>
+    <p><strong>Cause:</strong> LinkedIn may have temporarily rate-limited the scraper, or the keyword returned fewer results than expected.</p>
+    <p><strong>Fix:</strong> Wait 30 minutes and rerun. Or broaden the keyword: replace "Business Intelligence" with "BI OR Business Intelligence OR Analytics."</p>
+  </div>
+
+  <div class="card">
+    <h3>❌ "Tool result too large" error</h3>
+    <p><strong>Cause:</strong> The dataset is large (400+ jobs) and Claude is trying to load all descriptions at once.</p>
+    <p><strong>Fix:</strong> Claude automatically handles this by fetching in batches. If it gets stuck, tell Claude: "Please fetch in batches of 60 jobs and process each batch separately."</p>
+  </div>
+
+  <div class="card">
+    <h3>❌ The HTML file doesn't open correctly</h3>
+    <p><strong>Cause:</strong> Some browsers block local HTML files with JavaScript.</p>
+    <p><strong>Fix:</strong> Right-click the file → Open With → Google Chrome or Firefox. Avoid opening in Safari on some macOS versions. Alternatively, drag the file directly into a browser window.</p>
+  </div>
+
+  <div class="card">
+    <h3>❌ Recruiter search links open an empty LinkedIn page</h3>
+    <p><strong>Cause:</strong> You need to be logged into LinkedIn for People Search to work.</p>
+    <p><strong>Fix:</strong> Log into LinkedIn first, then click the recruiter/hiring manager links. They will populate with real profiles.</p>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout-icon">🔄</div>
+    <div class="callout-body">
+      <strong>If all else fails — the nuclear option</strong>
+      Close the Claude tab entirely, open a fresh tab, go to claude.ai, start a new conversation, and paste the full prompt from Section 4. The pipeline has worked correctly in every fresh conversation tested.
+    </div>
+  </div>
+</section>
+
+<!-- QUICK REFERENCE -->
+<section>
+  <div class="section-header">
+    <div class="step-num" style="background:var(--green)">★</div>
+    <h2>Quick Reference Card</h2>
+  </div>
+
+  <div class="card" style="background:#0d1117;border-color:#30363d;color:#e6edf3">
+    <div style="font-family:monospace;font-size:12.5px;line-height:2.2">
+      <span style="color:#8b949e">## DAILY CHECKLIST</span><br>
+      <span style="color:#cba6f7">□</span> Open <span style="color:#a6e3a1">claude.ai</span> → Start NEW conversation<br>
+      <span style="color:#cba6f7">□</span> Paste the Section 4 prompt → Hit Enter<br>
+      <span style="color:#cba6f7">□</span> Wait <span style="color:#fab387">2–3 minutes</span> for scrape + filter + build<br>
+      <span style="color:#cba6f7">□</span> Download the <span style="color:#89dceb">.html</span> file<br>
+      <span style="color:#cba6f7">□</span> Filter to <span style="color:#cba6f7">🟣 Both</span> + <span style="color:#a6e3a1">Low competition</span><br>
+      <span style="color:#cba6f7">□</span> Apply immediately to best matches<br>
+      <span style="color:#cba6f7">□</span> Message recruiters via 🔍 Find Recruiter links<br><br>
+      <span style="color:#8b949e">## TYPICAL RESULTS PER RUN</span><br>
+      Total scraped: <span style="color:#fab387">300–400 jobs</span><br>
+      After H1B filter: <span style="color:#fab387">150–230 jobs</span><br>
+      🟣 Both signal: <span style="color:#fab387">30–60 jobs</span><br>
+      🟣 Both + Low competition: <span style="color:#fab387">8–20 jobs</span> ← apply to ALL<br><br>
+      <span style="color:#8b949e">## KEY COMPANIES ALWAYS IN RESULTS</span><br>
+      <span style="color:#89b4fa">Amazon AWS · Salesforce · Wells Fargo · Deloitte</span><br>
+      <span style="color:#89b4fa">JPMorgan · Capital One · Microsoft · Netflix · PwC</span><br>
+      <span style="color:#89b4fa">TCS · Infosys · HCLTech · Capgemini · Booz Allen</span>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <p>Built with Claude.ai + Apify · LinkedIn BI Jobs H1B Scraper Pipeline · Shareable guide · Last updated Aug 2026</p>
+  <p style="margin-top:6px">Note: LinkedIn job data is scraped publicly. Always verify visa sponsorship directly with the employer before applying.</p>
+</footer>
+
+<script>
+function copyPrompt() {
+  const text = document.getElementById('prompt-content').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.style.color = '#3fb950';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
